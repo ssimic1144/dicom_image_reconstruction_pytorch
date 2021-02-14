@@ -13,7 +13,7 @@ import time
 image_size = 64
 batch_size = 60
 learning_rate = 0.001
-num_of_epochs = 10
+num_of_epochs = 20
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -41,8 +41,8 @@ model.to(device)
 
 criterion_ssim = SSIM()
 criterion_mse = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-#optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+#optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
 for epoch in range(num_of_epochs):
     start_time = time.time()
@@ -71,7 +71,7 @@ for epoch in range(num_of_epochs):
         epoch_loss += loss_value * prev_img.shape[0]
         n_samples += prev_img.shape[0]
         #print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch+1, iteration, len(train_loader), loss_value))
-    print("Epoch {} Complete: Train Avg. Loss: {:.4f}".format(epoch+1, epoch_loss/n_samples))
+    print("Epoch {} Training Completed: Train Avg. Loss: {:.4f}".format(epoch+1, epoch_loss/n_samples))
     
     #Validation
     model.eval()
@@ -88,6 +88,6 @@ for epoch in range(num_of_epochs):
 
             total_loss += loss.item() * prev_img.shape[0]
             n_samples += prev_img.shape[0]
-    print("Epoch {} Validation Complete: Validation Avg. Loss: {:.4f}".format(epoch+1, total_loss/n_samples))
+    print("Epoch {} Validation Completed: Validation Avg. Loss: {:.4f}".format(epoch+1, total_loss/n_samples))
     end_time = time.time() - start_time
     print("This epoch took {:.2f} seconds to complete".format(end_time))
