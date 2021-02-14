@@ -12,7 +12,7 @@ import time
 
 image_size = 64
 batch_size = 60
-learning_rate = 0.0001
+learning_rate = 0.001
 num_of_epochs = 10
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -42,10 +42,14 @@ model.to(device)
 criterion_ssim = SSIM()
 criterion_mse = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+#optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
 for epoch in range(num_of_epochs):
-    epoch_loss = 0
     start_time = time.time()
+    #Training
+    model.train()
+    epoch_loss = 0
+    n_samples = 0
     for iteration, (prev_img, next_img, expcted_img) in enumerate(train_loader):
         prev_img = prev_img.to(device=device)
         next_img = next_img.to(device=device)
@@ -64,8 +68,26 @@ for epoch in range(num_of_epochs):
         
         optimizer.step()
 
-        epoch_loss += loss_value
-        print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch+1, iteration, len(train_loader), loss_value))
+        epoch_loss += loss_value * prev_img.shape[0]
+        n_samples += prev_img.shape[0]
+        #print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch+1, iteration, len(train_loader), loss_value))
+    print("Epoch {} Complete: Train Avg. Loss: {:.4f}".format(epoch+1, epoch_loss/n_samples))
+    
+    #Validation
+    model.eval()
+    total_loss = 0
+    n_samples = 0
+    with torch.no_grad():
+        for prev_img, next_img, expcted_img in validation_loader:
+            prev_img, next_img = prev_img.to(device),next_img.to(device)
+            expcted_img = expcted_img.to(device)
+
+            output = model(prev_img, next_img)
+
+            loss = 1 - criterion_ssim(output, expcted_img)
+
+            total_loss += loss.item() * prev_img.shape[0]
+            n_samples += prev_img.shape[0]
+    print("Epoch {} Validation Complete: Validation Avg. Loss: {:.4f}".format(epoch+1, total_loss/n_samples))
     end_time = time.time() - start_time
-    print("This epoch took {}".format(end_time))
-    print("Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch+1, epoch_loss))
+    print("This epoch took {:.2f} seconds to complete".format(end_time))
