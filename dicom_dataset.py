@@ -84,7 +84,7 @@ class DicomDataset(Dataset):
     
 
 if __name__=="__main__":
-    new_dataset = DicomDataset("slike/")
+    new_dataset = DicomDataset("../slike/")
     #print(new_dataset.dicom_files)
     print(new_dataset.__len__())
     #print(new_dataset.all_in_one())

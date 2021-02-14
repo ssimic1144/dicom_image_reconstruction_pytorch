@@ -23,14 +23,16 @@ transformations = transforms.Compose([
     transforms.Normalize((0.5), (0.5))
 ])
 
-dataset = DicomDataset("slike/", transform=transformations)
+dataset = DicomDataset("../slike/", transform=transformations)
 
 train_size = int(0.8 * len(dataset))
-test_size = len(dataset)-train_size
+validation_size = int(0.15 * len(dataset))
+test_size = len(dataset)-train_size-validation_size
 
-train_set, test_set = random_split(dataset, [train_size,test_size], generator=torch.Generator().manual_seed(42))
+train_set, validation_set, test_set = random_split(dataset, [train_size, validation_size, test_size], generator=torch.Generator().manual_seed(42))
 
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
+validation_loader = DataLoader(dataset=validation_set, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(dataset=test_set,batch_size=batch_size, shuffle=True)
 
 
