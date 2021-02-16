@@ -50,6 +50,7 @@ for epoch in range(num_of_epochs):
     model.train()
     epoch_loss = 0
     n_samples = 0
+    total_mse_loss = 0
     for iteration, (prev_img, next_img, expcted_img) in enumerate(train_loader):
         prev_img = prev_img.to(device=device)
         next_img = next_img.to(device=device)
@@ -60,7 +61,7 @@ for epoch in range(num_of_epochs):
         output = model(prev_img,next_img)
 
         loss = 1 - criterion_ssim(output, expcted_img)
-        #loss = criterion_mse(output, expcted_img)
+        loss_mse = criterion_mse(output, expcted_img)
 
         loss_value = loss.item()
         
@@ -69,14 +70,16 @@ for epoch in range(num_of_epochs):
         optimizer.step()
 
         epoch_loss += loss_value * prev_img.shape[0]
+        total_mse_loss += loss_mse.item() * prev_img.shape[0]
         n_samples += prev_img.shape[0]
         #print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch+1, iteration, len(train_loader), loss_value))
-    print("Epoch {} Training Completed: Train Avg. Loss: {:.4f}".format(epoch+1, epoch_loss/n_samples))
+    print("Epoch {} Training Completed:\nTrain Avg. SSIM Loss: {:.4f} : Train Avg. MSE Loss : {:.4f}".format(epoch+1, epoch_loss/n_samples, total_mse_loss/n_samples))
     
     #Validation
     model.eval()
     total_loss = 0
     n_samples = 0
+    total_mse_loss = 0
     with torch.no_grad():
         for prev_img, next_img, expcted_img in validation_loader:
             prev_img, next_img = prev_img.to(device),next_img.to(device)
@@ -85,9 +88,14 @@ for epoch in range(num_of_epochs):
             output = model(prev_img, next_img)
 
             loss = 1 - criterion_ssim(output, expcted_img)
+            loss_mse = criterion_mse(output, expcted_img)
 
+            total_mse_loss += loss_mse.item() * prev_img.shape[0]
             total_loss += loss.item() * prev_img.shape[0]
             n_samples += prev_img.shape[0]
-    print("Epoch {} Validation Completed: Validation Avg. Loss: {:.4f}".format(epoch+1, total_loss/n_samples))
+    print("Epoch {} Validation Completed:\nValidation Avg. Loss: {:.4f} : Avg. MSE Loss : {:.4f}".format(epoch+1, total_loss/n_samples, total_mse_loss/n_samples))
     end_time = time.time() - start_time
     print("This epoch took {:.2f} seconds to complete".format(end_time))
+
+#Saving trained model
+torch.save(model.state_dict(),"model.pt")
