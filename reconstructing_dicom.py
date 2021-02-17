@@ -2,7 +2,8 @@ import torch
 from torchvision.transforms import transforms
 import pydicom
 import matplotlib.pyplot as plt 
-
+import numpy as np
+from PIL import Image
 from nn_model import Net
 
 model = Net()
@@ -24,12 +25,11 @@ expected_img = array_dicom[1,:,:]
 transformations_for_model = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize(64),
-    transforms.Normalize((0.5), (0.5))
+    transforms.Normalize((0.5,),(0.5,))
 ])
 
 transformations_from_model = transforms.Compose([
-    transforms.Resize(128),
-    transforms.Normalize((-0.5/0.5),(1.0/0.5))
+    transforms.Resize(128)
 ])
 
 first_img = transformations_for_model(first_img)
@@ -42,12 +42,19 @@ print(first_img.shape)
 output = model.forward(first_img,second_img)
 
 output = transformations_from_model(output)
+print(torch.max(output))
 
-output_numpy = output.cpu().detach().numpy()
-
-output_numpy = output_numpy[0,:,:,:]
+output_numpy = output.cpu().detach().numpy().transpose(0,2,3,1)[0]
+#output_numpy = output_numpy.astype("uint8")
+output_numpy = (255*(output_numpy - np.min(output_numpy))/np.ptp(output_numpy)).astype(int) 
+print(output_numpy)
 print(output_numpy.shape)
-plt.imshow(output_numpy[0])
+
+
+#output_numpy = output_numpy[0,:,:,:]
+#print(output_numpy.shape)
+plt.gray()
+plt.imshow(output_numpy)
 plt.show()
-plt.imshow(expected_img)
-plt.show()
+#plt.imshow(expected_img)
+#plt.show()

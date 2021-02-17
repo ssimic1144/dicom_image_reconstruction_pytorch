@@ -12,21 +12,21 @@ class Net(nn.Module):
 
         self.pool = nn.AvgPool2d(kernel_size=(2,2), stride=(2,2))
         self.upsamp = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
-        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
 
-        self.conv64 = self._conv_module(2, 64, conv_kernel, conv_stride, conv_padding,self.relu)
-        self.conv128 = self._conv_module(64, 128, conv_kernel, conv_stride, conv_padding,self.relu)
-        self.conv256 = self._conv_module(128, 256, conv_kernel, conv_stride, conv_padding,self.relu)
-        self.conv256x256 = self._conv_module(256, 256, conv_kernel, conv_stride, conv_padding,self.relu)
+        self.conv64 = self._conv_module(2, 64, conv_kernel, conv_stride, conv_padding,self.sigmoid)
+        self.conv128 = self._conv_module(64, 128, conv_kernel, conv_stride, conv_padding,self.sigmoid)
+        self.conv256 = self._conv_module(128, 256, conv_kernel, conv_stride, conv_padding,self.sigmoid)
+        self.conv256x256 = self._conv_module(256, 256, conv_kernel, conv_stride, conv_padding,self.sigmoid)
 
-        self.upsample1 = self._upsample_module(256,256,conv_kernel,conv_stride,conv_padding, self.upsamp, self.relu)
-        self.mid_conv1 = self._conv_module(256, 128, conv_kernel, conv_stride, conv_padding,self.relu)
-        self.upsample2 = self._upsample_module(128,128,conv_kernel,conv_stride,conv_padding, self.upsamp, self.relu)
-        self.mid_conv2 = self._conv_module(128, 64, conv_kernel, conv_stride, conv_padding,self.relu)
-        self.upsample3 = self._upsample_module(64,32,conv_kernel,conv_stride,conv_padding, self.upsamp, self.relu)
-        self.mid_conv3 = self._conv_module(32, 16, conv_kernel, conv_stride, conv_padding,self.relu)
+        self.upsample1 = self._upsample_module(256,256,conv_kernel,conv_stride,conv_padding, self.upsamp, self.sigmoid)
+        self.mid_conv1 = self._conv_module(256, 128, conv_kernel, conv_stride, conv_padding,self.sigmoid)
+        self.upsample2 = self._upsample_module(128,128,conv_kernel,conv_stride,conv_padding, self.upsamp, self.sigmoid)
+        self.mid_conv2 = self._conv_module(128, 64, conv_kernel, conv_stride, conv_padding,self.sigmoid)
+        self.upsample3 = self._upsample_module(64,32,conv_kernel,conv_stride,conv_padding, self.upsamp, self.sigmoid)
+        self.mid_conv3 = self._conv_module(32, 16, conv_kernel, conv_stride, conv_padding,self.sigmoid)
 
-        self.end_layer = self._exit_layer(16,1,conv_kernel,conv_stride,conv_padding,self.upsamp,self.relu)
+        self.end_layer = self._exit_layer(16,1,conv_kernel,conv_stride,conv_padding,self.upsamp,self.sigmoid)
 
 
 
@@ -59,23 +59,25 @@ class Net(nn.Module):
         
         x = self.end_layer(x)
         #print(x.shape)
+        #print(torch.max(x))
+        #print(torch.min(x))
         return x 
 
-    def _conv_module(self, in_channels, out_channels, kernel, stride, padding, relu):
+    def _conv_module(self, in_channels, out_channels, kernel, stride, padding, sigmoid):
         return nn.Sequential(
-            nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
-            nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
-            nn.Conv2d(in_channels, out_channels, kernel, stride, padding), relu,
+            nn.Conv2d(in_channels, in_channels, kernel, stride, padding), sigmoid,
+            nn.Conv2d(in_channels, in_channels, kernel, stride, padding), sigmoid,
+            nn.Conv2d(in_channels, out_channels, kernel, stride, padding), sigmoid,
         )
-    def _upsample_module(self, in_channels, out_channels, kernel, stride, padding, upsample, relu):
+    def _upsample_module(self, in_channels, out_channels, kernel, stride, padding, upsample, sigmoid):
         return nn.Sequential(
-            upsample, nn.Conv2d(in_channels,out_channels,kernel,stride,padding), relu
+            upsample, nn.Conv2d(in_channels,out_channels,kernel,stride,padding), sigmoid
         )
-    def _exit_layer(self,in_channels, out_channels,kernel,stride,padding,upsample,relu):
+    def _exit_layer(self,in_channels, out_channels,kernel,stride,padding,upsample,sigmoid):
         return nn.Sequential(
-            nn.Conv2d(in_channels,in_channels, kernel,stride,padding),relu,
-            nn.Conv2d(in_channels,in_channels, kernel,stride,padding),relu,
-            nn.Conv2d(in_channels,out_channels, kernel,stride,padding),relu,
+            nn.Conv2d(in_channels,in_channels, kernel,stride,padding),sigmoid,
+            nn.Conv2d(in_channels,in_channels, kernel,stride,padding),sigmoid,
+            nn.Conv2d(in_channels,out_channels, kernel,stride,padding),sigmoid,
             upsample,
-            nn.Conv2d(out_channels,out_channels, kernel,stride,padding),
+            nn.Conv2d(out_channels,out_channels, kernel,stride,padding),sigmoid
         )

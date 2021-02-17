@@ -4,6 +4,8 @@ import os
 import numpy as np
 from PIL import Image
 
+import matplotlib.pyplot as plt
+
 class DicomDataset(Dataset):
     def __init__(self, dicom_dir, transform = None):
         self.dicom_dir = dicom_dir
@@ -85,15 +87,3 @@ class DicomDataset(Dataset):
 
 if __name__=="__main__":
     new_dataset = DicomDataset("../slike/")
-    #print(new_dataset.dicom_files)
-    print(new_dataset.__len__())
-    #print(new_dataset.all_in_one())
-    print(new_dataset.list_of_shapes)
-    print(new_dataset.__getitem__(257))
-    print(new_dataset.__getitem__(0))
-    print(new_dataset.__getitem__(5))
-    print(new_dataset.__getitem__(512))
-    print(new_dataset.__getitem__(2975))
-    print(new_dataset.__getitem__(1024))
-    print(new_dataset.__getitem__(1025))
-    #print(new_dataset.number_of_projection_per_dicom())

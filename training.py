@@ -20,7 +20,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 transformations = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize(image_size),
-    transforms.Normalize((0.5), (0.5))
+    transforms.Normalize((0.5,),(0.5,))
 ])
 
 dataset = DicomDataset("../slike/", transform=transformations)
@@ -40,9 +40,9 @@ model = Net()
 model.to(device)
 
 criterion_ssim = SSIM()
-criterion_mse = nn.MSELoss()
-#optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+#criterion_mse = nn.MSELoss()
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+#optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
 for epoch in range(num_of_epochs):
     start_time = time.time()
@@ -61,16 +61,17 @@ for epoch in range(num_of_epochs):
         output = model(prev_img,next_img)
 
         loss = 1 - criterion_ssim(output, expcted_img)
-        loss_mse = criterion_mse(output, expcted_img)
+        #loss_mse = criterion_mse(output, expcted_img)
 
         loss_value = loss.item()
         
         loss.backward()
+        #loss_mse.backward()
         
         optimizer.step()
 
         epoch_loss += loss_value * prev_img.shape[0]
-        total_mse_loss += loss_mse.item() * prev_img.shape[0]
+        #total_mse_loss += loss_mse.item() * prev_img.shape[0]
         n_samples += prev_img.shape[0]
         #print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch+1, iteration, len(train_loader), loss_value))
     print("Epoch {} Training Completed:\nTrain Avg. SSIM Loss: {:.4f} : Train Avg. MSE Loss : {:.4f}".format(epoch+1, epoch_loss/n_samples, total_mse_loss/n_samples))
@@ -88,9 +89,9 @@ for epoch in range(num_of_epochs):
             output = model(prev_img, next_img)
 
             loss = 1 - criterion_ssim(output, expcted_img)
-            loss_mse = criterion_mse(output, expcted_img)
+            #loss_mse = criterion_mse(output, expcted_img)
 
-            total_mse_loss += loss_mse.item() * prev_img.shape[0]
+            #total_mse_loss += loss_mse.item() * prev_img.shape[0]
             total_loss += loss.item() * prev_img.shape[0]
             n_samples += prev_img.shape[0]
     print("Epoch {} Validation Completed:\nValidation Avg. Loss: {:.4f} : Avg. MSE Loss : {:.4f}".format(epoch+1, total_loss/n_samples, total_mse_loss/n_samples))
