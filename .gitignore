@@ -2,3 +2,4 @@
 __pycache__/
 .ipynb_checkpoints/
 *.pt
+models_with_better_score/
