@@ -4,4 +4,4 @@ The goal of this project is to create missing projection using 2 input projectio
 
 ## Current status of project
 
-Current model doesn't reconstruct image as expected
+Current model does reconstruct image but it's still little bit blurry.

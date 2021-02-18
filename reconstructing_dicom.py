@@ -4,13 +4,13 @@ import pydicom
 import matplotlib.pyplot as plt 
 import numpy as np
 from PIL import Image
-from nn_model import Net
+from simple_nn_model import Net
 
 model = Net()
 model.load_state_dict(torch.load("model.pt"))
 model.eval()
 
-dicom_path = "../slike/jazack1.IMA"
+dicom_path = "../test_slika/jazack1.IMA"
 
 dicom_file = pydicom.dcmread(dicom_path)
 
@@ -18,9 +18,9 @@ array_dicom = dicom_file.pixel_array
 array_dicom = array_dicom.astype("uint8")
 print(array_dicom.shape)
 
-first_img = array_dicom[100,:,:]
-second_img = array_dicom[102,:,:]
-expected_img = array_dicom[101,:,:]
+first_img = array_dicom[4,:,:]
+second_img = array_dicom[6,:,:]
+expected_img = array_dicom[5,:,:]
 
 transformations_for_model = transforms.Compose([
     transforms.ToTensor(),
@@ -44,8 +44,10 @@ output = model.forward(first_img,second_img)
 output = transformations_from_model(output)
 
 output_numpy = output.cpu().detach().numpy().transpose(0,2,3,1)[0]
+#Convert to 0-255 range 
+output_numpy = (255*(output_numpy - np.min(output_numpy))/np.ptp(output_numpy)).astype(int) 
 #output_numpy = output_numpy.astype("uint16")
-#output_numpy = (255*(output_numpy - np.min(output_numpy))/np.ptp(output_numpy)).astype(int) 
+
 print(output_numpy)
 #print(output_numpy.shape)
 print(torch.max(output))
