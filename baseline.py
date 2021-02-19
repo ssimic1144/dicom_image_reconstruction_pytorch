@@ -1,7 +1,7 @@
 import torch
 import numpy as np 
 
-def output_tensor(previous_image_tensor, next_image_tensor):
+def baseline_tensor(previous_image_tensor, next_image_tensor):
     previous_np_array = previous_image_tensor.cpu().detach().numpy()[0]
     next_np_array = next_image_tensor.cpu().detach().numpy()[0]
 

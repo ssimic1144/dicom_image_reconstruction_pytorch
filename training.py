@@ -16,7 +16,7 @@ import numpy as np
 image_size = 64
 batch_size = 20
 learning_rate = 0.001
-num_of_epochs = 100
+num_of_epochs = 50
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -47,7 +47,7 @@ criterion_ssim = SSIM()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 #optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=5, verbose=True)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.01, patience=5, verbose=True)
 
 for epoch in range(num_of_epochs):
     start_time = time.time()
