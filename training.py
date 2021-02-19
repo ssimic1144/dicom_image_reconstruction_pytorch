@@ -4,7 +4,9 @@ import torch.optim as optim
 from torch.utils.data import DataLoader,random_split
 from torchvision.transforms import transforms
 
-from simple_nn_model import Net
+from models.no_changes_net import Net
+#from models.simple_nn_model import Net
+#from models.basic_net import Net
 from dicom_dataset import DicomDataset
 from ssim_loss import SSIM
 
@@ -45,6 +47,8 @@ criterion_ssim = SSIM()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 #optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=5, verbose=True)
+
 for epoch in range(num_of_epochs):
     start_time = time.time()
     #Training
@@ -54,6 +58,8 @@ for epoch in range(num_of_epochs):
         prev_img = prev_img.to(device=device)
         next_img = next_img.to(device=device)
         expcted_img = expcted_img.to(device=device)
+        
+        optimizer.zero_grad()
 
         output = model(prev_img,next_img)
 
@@ -66,11 +72,11 @@ for epoch in range(num_of_epochs):
         #loss_mse.backward()
         
         optimizer.step()
-        optimizer.zero_grad()
         
         training_losses.append(loss_value)
         #total_mse_loss += loss_mse.item() * prev_img.shape[0]
     avg_training_losses = np.array(training_losses).mean()
+    scheduler.step(avg_training_losses)
     print("Epoch {} Training Completed: Train Avg. SSIM Loss: {:.4f}".format(epoch+1, avg_training_losses))
     
     #Validation
