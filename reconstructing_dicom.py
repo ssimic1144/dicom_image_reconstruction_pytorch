@@ -1,64 +1,71 @@
+import pydicom
+import numpy as np
 import torch
 from torchvision.transforms import transforms
-import pydicom
-import matplotlib.pyplot as plt 
-import numpy as np
-from PIL import Image
 
 from models.no_changes_net import Net
-#from models.basic_net import Net
-#from models.simple_nn_model import Net
-from ssim_loss import SSIM
 
-model = Net()
-model.load_state_dict(torch.load("model.pt"))
-model.eval()
+def test_dicom_reconstruction(array_dicom, model):
+    new_array_dicom_list = []
+    
+    len_of_array_dicom = array_dicom.shape[0]
+
+    transformations_for_model = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize(64),
+        transforms.Normalize((0.5,),(0.5,))
+    ])
+    
+    transformations_from_model = transforms.Compose([
+        transforms.Resize(128)
+    ])
+    
+    model.eval()
+
+    for position in range(0, len_of_array_dicom, 2):
+        previous_projection = array_dicom[position,:,:]
+        previous_projection = previous_projection[..., None]
+        next_projection = array_dicom[(position+2)%len_of_array_dicom,:,:]
+        next_projection = next_projection[..., None]
+
+        previous_projection = transformations_for_model(previous_projection)
+        next_projection = transformations_for_model(next_projection)
+        previous_projection = previous_projection[None, ...]
+        next_projection = next_projection[None, ...]
+
+        output = model.forward(previous_projection,next_projection)
+
+        previous_projection = transformations_from_model(previous_projection)
+        output = transformations_from_model(output)
+        
+        previous_projection = previous_projection.cpu().detach().numpy()[0]
+        output = output.cpu().detach().numpy()[0]
+        output = (255*(output - np.min(output))/np.ptp(output)).astype(int) 
+        
+        new_array_dicom_list.append(previous_projection)
+        new_array_dicom_list.append(output)
+
+
+    new_array_dicom  = np.vstack(new_array_dicom_list)
+    new_array_dicom = new_array_dicom.astype("uint16")
+    return new_array_dicom
+
+def production_dicom_reconstruction():
+    pass
 
 dicom_path = "../test_slika/jazack1.IMA"
 
 dicom_file = pydicom.dcmread(dicom_path)
 
-array_dicom = dicom_file.pixel_array
-array_dicom = array_dicom.astype("uint8")
-print(array_dicom.shape)
+original_array_dicom = dicom_file.pixel_array
+original_array_dicom = original_array_dicom.astype("uint8")
 
-first_img = array_dicom[1,:,:]
-second_img = array_dicom[3,:,:]
-expected_img = array_dicom[2,:,:]
+model = Net()
+model.load_state_dict(torch.load("model.pt"))
 
+generated_pixel_array = test_dicom_reconstruction(original_array_dicom, model)
 
-transformations_for_model = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Resize(64),
-    transforms.Normalize((0.5,),(0.5,))
-])
+dicom_file.PixelData = generated_pixel_array.tobytes()
+dicom_file.Rows, dicom_file.Columns = generated_pixel_array.shape[1], generated_pixel_array.shape[2]
 
-transformations_from_model = transforms.Compose([
-    transforms.Resize(128)
-
-])
-
-first_img = transformations_for_model(first_img)
-#print(first_img.shape)
-second_img = transformations_for_model(second_img)
-
-first_img = first_img[None,...]
-second_img = second_img[None,...]
-
-output = model.forward(first_img,second_img)
-
-output = transformations_from_model(output)
-
-output_numpy = output.cpu().detach().numpy().transpose(0,2,3,1)[0]
-#Convert to 0-255 range 
-output_numpy = (255*(output_numpy - np.min(output_numpy))/np.ptp(output_numpy)).astype(int) 
-
-print(output_numpy)
-print(torch.max(output))
-print(torch.min(output))
-
-#plt.gray()
-plt.imshow(output_numpy)
-plt.show()
-plt.imshow(expected_img)
-plt.show()
+dicom_file.save_as("generated_dicom.IMA")
