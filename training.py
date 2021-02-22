@@ -14,9 +14,9 @@ import time
 import numpy as np
 
 image_size = 64
-batch_size = 20
+batch_size = 10
 learning_rate = 0.001
-num_of_epochs = 50
+num_of_epochs = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -43,11 +43,9 @@ model = Net()
 model.to(device)
 
 criterion_ssim = SSIM()
-#criterion_mse = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-#optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.01, patience=5, verbose=True)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.876543, patience=5, threshold_mode="abs" ,threshold=0.0001 ,verbose=True)
 
 for epoch in range(num_of_epochs):
     start_time = time.time()
@@ -64,19 +62,15 @@ for epoch in range(num_of_epochs):
         output = model(prev_img,next_img)
 
         loss = 1 - criterion_ssim(output, expcted_img)
-        #loss_mse = criterion_mse(output, expcted_img)
 
         loss_value = loss.item()
         
         loss.backward()
-        #loss_mse.backward()
         
         optimizer.step()
         
         training_losses.append(loss_value)
-        #total_mse_loss += loss_mse.item() * prev_img.shape[0]
     avg_training_losses = np.array(training_losses).mean()
-    scheduler.step(avg_training_losses)
     print("Epoch {} Training Completed: Train Avg. SSIM Loss: {:.4f}".format(epoch+1, avg_training_losses))
     
     #Validation
@@ -90,14 +84,13 @@ for epoch in range(num_of_epochs):
             output = model(prev_img, next_img)
 
             loss = 1 - criterion_ssim(output, expcted_img)
-            #loss_mse = criterion_mse(output, expcted_img)
 
-            #total_mse_loss += loss_mse.item() * prev_img.shape[0]
             val_losses.append(loss.item())
     avg_val_losses = np.array(val_losses).mean()
     print("Epoch {} Validation Completed: Validation Avg. Loss: {:.4f}".format(epoch+1, avg_val_losses))
     end_time = time.time() - start_time
     print("This epoch took {:.2f} seconds to complete".format(end_time))
+    scheduler.step(avg_val_losses)
 
 #Saving trained model
 torch.save(model.state_dict(),"model.pt")
