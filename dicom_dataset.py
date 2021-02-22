@@ -4,7 +4,7 @@ import os
 import numpy as np
 from PIL import Image
 
-import matplotlib.pyplot as plt
+from reconstructing_dicom import convert
 
 class DicomDataset(Dataset):
     def __init__(self, dicom_dir, transform = None):
@@ -63,9 +63,9 @@ class DicomDataset(Dataset):
         list_of_all_dicoms = []
         for dicom in self.dicom_files:
             array_dicom = self.get_dicom_pixel_array(self.dicom_dir, dicom)
+            array_dicom = convert(array_dicom,0,255,np.uint8)
             list_of_all_dicoms.append(array_dicom)
         np_dicoms = np.vstack(list_of_all_dicoms)
-        np_dicoms = np_dicoms.astype('uint8')
         return np_dicoms
 
     def get_list_of_shapes(self):
@@ -84,6 +84,6 @@ class DicomDataset(Dataset):
         array_dicom = dicom_file.pixel_array
         return array_dicom
     
-
+               
 if __name__=="__main__":
     new_dataset = DicomDataset("../slike/")

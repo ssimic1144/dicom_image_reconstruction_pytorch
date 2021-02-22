@@ -39,6 +39,7 @@ def test_dicom_reconstruction(array_dicom, model):
         output = transformations_from_model(output)
         
         previous_projection = previous_projection.cpu().detach().numpy()[0]
+        previous_projection = (255*(previous_projection - np.min(previous_projection))/np.ptp(previous_projection)).astype(int) 
         output = output.cpu().detach().numpy()[0]
         output = (255*(output - np.min(output))/np.ptp(output)).astype(int) 
         
@@ -84,6 +85,7 @@ def production_dicom_reconstruction(array_dicom, model):
         output = transformations_from_model(output)
         
         previous_projection = previous_projection.cpu().detach().numpy()[0]
+        previous_projection = (255*(previous_projection - np.min(previous_projection))/np.ptp(previous_projection)).astype(int)
         output = output.cpu().detach().numpy()[0]
         output = (255*(output - np.min(output))/np.ptp(output)).astype(int) 
         
@@ -94,13 +96,21 @@ def production_dicom_reconstruction(array_dicom, model):
     new_array_dicom = new_array_dicom.astype("uint16")
     return new_array_dicom
 
+def convert(img, target_type_min, target_type_max, target_type):
+        imin = img.min()
+        imax = img.max()
+        a = (target_type_max - target_type_min) / (imax - imin)
+        b = target_type_max - a * imax
+        new_img = (a * img + b).astype(target_type)
+        return new_img
+
 
 dicom_path = "../test_slika/jazack1.IMA"
 
 dicom_file = pydicom.dcmread(dicom_path)
 
 original_array_dicom = dicom_file.pixel_array
-original_array_dicom = original_array_dicom.astype("uint8")
+original_array_dicom = convert(original_array_dicom, 0, 255, np.uint8)
 
 model = Net()
 model.load_state_dict(torch.load("model.pt"))
