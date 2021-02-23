@@ -4,7 +4,6 @@ import os
 import numpy as np
 from PIL import Image
 
-from reconstructing_dicom import convert
 
 class DicomDataset(Dataset):
     def __init__(self, dicom_dir, transform = None):
@@ -28,14 +27,12 @@ class DicomDataset(Dataset):
                 previous_image_index = index + current_shape - 1
                 next_image_index = index + 1
                 break
-            #prvi
             if index == x:
                 current_shape = x - self.list_of_shapes[position-1]
                 expected_image_index = index
                 previous_image_index = index + current_shape - 1 
                 next_image_index = index + 1 
                 break
-            #zadnji
             if index == x-1:
                 current_shape = x - self.list_of_shapes[position-1]
                 expected_image_index = index
@@ -84,6 +81,13 @@ class DicomDataset(Dataset):
         array_dicom = dicom_file.pixel_array
         return array_dicom
     
-               
+def convert(img, target_type_min, target_type_max, target_type):
+        imin = img.min()
+        imax = img.max()
+        a = (target_type_max - target_type_min) / (imax - imin)
+        b = target_type_max - a * imax
+        new_img = (a * img + b).astype(target_type)
+        return new_img
+
 if __name__=="__main__":
     new_dataset = DicomDataset("../slike/")
