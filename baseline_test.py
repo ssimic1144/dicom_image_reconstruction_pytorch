@@ -17,4 +17,6 @@ for _ in range(1):
         ssim_value = criterion(baseline_tensor(prev_img,next_img),expcted_img)
         all_ssim_values.append(ssim_value.item())
     avg_ssim_value = np.array(all_ssim_values).mean()
-    print("Avg. SSIM value for expected and output tensor : {:.4f}".format(avg_ssim_value))
+    min_ssim_value = np.array(all_ssim_values).min()
+    max_ssim_value = np.array(all_ssim_values).max()
+    print("Avg. SSIM value for expected and output tensor : {:.4f}\nMin : {:.4f}\nMax : {:.4f}".format(avg_ssim_value, min_ssim_value, max_ssim_value))

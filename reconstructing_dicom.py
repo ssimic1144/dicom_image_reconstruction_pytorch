@@ -4,7 +4,9 @@ import torch
 from torchvision.transforms import transforms
 
 from models.no_changes_net import Net
+from models.net_1357 import FourInputNet
 from dicom_dataset import convert
+from baseline import baseline_tensor
 
 
 def get_numpy_array_from_tensor(tensor, min_value_for_conversion, max_value_for_conversion, numpy_type):
@@ -39,6 +41,7 @@ def test_dicom_reconstruction(dicom_path, model, transformations_for_model, tran
         next_projection = next_projection[None, ...]
 
         output = model.forward(previous_projection,next_projection)
+        #output = baseline_tensor(previous_projection, next_projection)
 
         previous_projection = transformations_from_model(previous_projection)
         output = transformations_from_model(output)
@@ -53,13 +56,15 @@ def test_dicom_reconstruction(dicom_path, model, transformations_for_model, tran
     
     dicom_file.PixelData = new_array_dicom.tobytes()
     dicom_file.Rows, dicom_file.Columns = new_array_dicom.shape[1], new_array_dicom.shape[2]
-    
+    dicom_file.NumberOfFrames = new_array_dicom.shape[0]
+
     return dicom_file
 
 def production_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model):
     dicom_file = pydicom.dcmread(dicom_path)
 
     original_array_dicom = dicom_file.pixel_array
+    print(original_array_dicom.shape)
     original_type = original_array_dicom.dtype
     original_min = original_array_dicom.min()
     original_max = original_array_dicom.max()
@@ -94,19 +99,66 @@ def production_dicom_reconstruction(dicom_path, model, transformations_for_model
         new_array_dicom_list.append(output)
 
     new_array_dicom  = np.vstack(new_array_dicom_list)
-    
     dicom_file.PixelData = new_array_dicom.tobytes()
     dicom_file.Rows, dicom_file.Columns = new_array_dicom.shape[1], new_array_dicom.shape[2]
-    
+    dicom_file.NumberOfFrames = new_array_dicom.shape[0]
     return dicom_file
 
+def four_input_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model):
+    dicom_file = pydicom.dcmread(dicom_path)
 
+    original_array_dicom = dicom_file.pixel_array
+    original_type = original_array_dicom.dtype
+    original_min = original_array_dicom.min()
+    original_max = original_array_dicom.max()
+    original_array_dicom = convert(original_array_dicom, 0, 255, np.uint8)
+
+    new_array_dicom_list = []
+
+    len_of_array_dicom = original_array_dicom.shape[0]
+
+    model.eval()
+    for position in range(1, len_of_array_dicom, 2):
+        one_projection = original_array_dicom[(position-3)%len_of_array_dicom,:,:]
+        three_projection = original_array_dicom[(position-1)%len_of_array_dicom,:,:]
+        five_projection = original_array_dicom[(position+1)%len_of_array_dicom,:,:]
+        seven_projection = original_array_dicom[(position+3)%len_of_array_dicom,:,:]
+
+        one_projection, three_projection, five_projection, seven_projection = one_projection[... , None], three_projection[... , None], five_projection[... , None], seven_projection[... , None]
+
+        one_projection = transformations_for_model(one_projection)
+        three_projection = transformations_for_model(three_projection)
+        five_projection = transformations_for_model(five_projection)
+        seven_projection = transformations_for_model(seven_projection)
+
+        one_projection, three_projection, five_projection, seven_projection = one_projection[None,...], three_projection[None,...], five_projection[None,...], seven_projection[None,...]
+        
+        output = model.forward(one_projection,three_projection,five_projection,seven_projection)
+
+        three_projection = transformations_from_model(three_projection)
+        output = transformations_from_model(output)
+
+        three_projection = get_numpy_array_from_tensor(three_projection, original_min, original_max, original_type)
+        output = get_numpy_array_from_tensor(output, original_min, original_max, original_type)
+        
+        new_array_dicom_list.append(three_projection)
+        new_array_dicom_list.append(output)
+
+    new_array_dicom  = np.vstack(new_array_dicom_list)
+    dicom_file.PixelData = new_array_dicom.tobytes()
+    dicom_file.Rows, dicom_file.Columns = new_array_dicom.shape[1], new_array_dicom.shape[2]
+    dicom_file.NumberOfFrames = new_array_dicom.shape[0]
+
+    return dicom_file
 
 if __name__=="__main__":
     dicom_path = "../test_slika/jazack1.IMA"
 
-    model = Net()
-    model.load_state_dict(torch.load("model.pt"))
+    #model = Net()
+    #model.load_state_dict(torch.load("model.pt"))
+    
+    model = FourInputNet()
+    model.load_state_dict(torch.load("1357model.pt"))
     
     transformations_for_model = transforms.Compose([
         transforms.ToTensor(),
@@ -120,9 +172,11 @@ if __name__=="__main__":
     ])
     
 
-    dicom_file = test_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model)
+    #dicom_file = test_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model)
     #Production function has not been tested yet
     #dicom_file = production_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model) 
 
-    dicom_file.save_as("generated_dicom.IMA")
+    dicom_file = four_input_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model)
+
+    dicom_file.save_as("four_input_generated_dicom.IMA")
     print("Dicom file generated.")
