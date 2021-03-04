@@ -2,8 +2,7 @@ from torch.utils.data import Dataset
 import pydicom
 import os
 import numpy as np
-from PIL import Image
-
+from utils.common import numpy_convert
 
 class DicomDataset(Dataset):
     def __init__(self, dicom_dir, transform = None):
@@ -60,7 +59,7 @@ class DicomDataset(Dataset):
         list_of_all_dicoms = []
         for dicom in self.dicom_files:
             array_dicom = self.get_dicom_pixel_array(self.dicom_dir, dicom)
-            array_dicom = convert(array_dicom,0,255,np.uint8)
+            array_dicom = numpy_convert(array_dicom,0,255,np.uint8)
             list_of_all_dicoms.append(array_dicom)
         np_dicoms = np.vstack(list_of_all_dicoms)
         return np_dicoms
@@ -81,13 +80,6 @@ class DicomDataset(Dataset):
         array_dicom = dicom_file.pixel_array
         return array_dicom
     
-def convert(img, target_type_min, target_type_max, target_type):
-        imin = img.min()
-        imax = img.max()
-        a = (target_type_max - target_type_min) / (imax - imin)
-        b = target_type_max - a * imax
-        new_img = (a * img + b).astype(target_type)
-        return new_img
 
 class DicomDataset1357(DicomDataset):
     def __init__(self, dicom_dir, transform=None):

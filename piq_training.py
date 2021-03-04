@@ -4,16 +4,18 @@ import torch.optim as optim
 from torch.utils.data import DataLoader,random_split
 from torchvision.transforms import transforms
 
-from models.no_changes_net import Net
+from piq import VIFLoss,MultiScaleSSIMLoss,GMSDLoss, SSIMLoss
+
+from models.piq_nc_net import Net
 from dicom_dataset import DicomDataset
-from ssim_loss import SSIM
+from utils.common import batch_tensor_convert, tensor_convert
 
 import time
 import numpy as np
 
 batch_size = 10
 learning_rate = 0.001
-num_of_epochs = 50
+num_of_epochs = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -38,10 +40,12 @@ test_loader = DataLoader(dataset=test_set,batch_size=batch_size, shuffle=True)
 model = Net()
 model.to(device)
 
-criterion_ssim = SSIM()
+criterion = SSIMLoss(data_range=1.0, kernel_size=11,k1=0.01, k2 = 0.03)
+#criterion = MultiScaleSSIMLoss(kernel_size=7,data_range=1.0)
+#criterion = VIFLoss(data_range=1.0)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.876543, patience=5, threshold_mode="abs" ,threshold=0.0001 ,verbose=True)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.6543, patience=5, threshold_mode="abs" ,threshold=0.0001 ,verbose=True)
 
 for epoch in range(num_of_epochs):
     start_time = time.time()
@@ -54,8 +58,11 @@ for epoch in range(num_of_epochs):
         expcted_img = expcted_img.to(device=device)
 
         output = model(prev_img,next_img)
-   
-        loss = 1 - criterion_ssim(output, expcted_img)
+
+        #output = batch_tensor_convert(output, 0, 1)
+        expcted_img = tensor_convert(expcted_img, 0, 1)
+
+        loss = criterion(output, expcted_img)
 
         optimizer.zero_grad()
         
@@ -79,7 +86,10 @@ for epoch in range(num_of_epochs):
 
             output = model(prev_img, next_img)
 
-            loss = 1 - criterion_ssim(output, expcted_img)
+            #output = batch_tensor_convert(output, 0, 1)
+            expcted_img = tensor_convert(expcted_img, 0, 1)
+
+            loss = criterion(output, expcted_img)
 
             val_losses.append(loss.item())
     avg_val_losses = np.array(val_losses).mean()
@@ -89,5 +99,5 @@ for epoch in range(num_of_epochs):
     scheduler.step(avg_val_losses)
 
 #Saving trained model
-torch.save(model.state_dict(),"model.pt")
+torch.save(model.state_dict(),"piq_model.pt")
 print("Saving model")
