@@ -12,11 +12,11 @@ class Net(nn.Module):
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
-
-        self.conv32 = self._conv_module(2, 32, conv_kernel, conv_stride, conv_padding,self.tanh)
+        self.elu = nn.ELU()
+        
+        self.conv32 = self._conv_module(2, 32, conv_kernel, conv_stride, conv_padding,self.elu)
         self.conv32x32 = self._conv_module(32, 32, conv_kernel, conv_stride, conv_padding,self.tanh)
-
-        self.end_layer = self._exit_layer(32,1,conv_kernel,conv_stride,conv_padding,self.sigmoid)
+        self.end_layer = self._exit_layer(32,1,conv_kernel,conv_stride,conv_padding,self.elu)
 
 
 
