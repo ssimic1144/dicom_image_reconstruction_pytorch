@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from torchvision.transforms import transforms
 
-from models.no_changes_net import Net
+from models.piq_nc_net import Net
 from models.net_1357 import FourInputNet
 from utils.common import numpy_convert
 from baseline import baseline_tensor
@@ -41,10 +41,6 @@ def test_dicom_reconstruction(dicom_path, model, transformations_for_model, tran
         next_projection = next_projection[None, ...]
 
         output = model.forward(previous_projection,next_projection)
-        #output = baseline_tensor(previous_projection, next_projection)
-
-        previous_projection = transformations_from_model(previous_projection)
-        output = transformations_from_model(output)
 
         previous_projection = get_numpy_array_from_tensor(previous_projection, original_min, original_max, original_type)
         output = get_numpy_array_from_tensor(output, original_min, original_max, original_type)
@@ -151,13 +147,11 @@ def four_input_dicom_reconstruction(dicom_path, model, transformations_for_model
     return dicom_file
 
 if __name__=="__main__":
-    dicom_path = "../half_projection/half_projection_1.IMA"
+    dicom_path = "../test_slika/jazack1.IMA"
 
     model = Net()
-    model.load_state_dict(torch.load("model.pt"))
+    model.load_state_dict(torch.load("saved_models/piq_model_200e.pt"))
     
-    #model = FourInputNet()
-    #model.load_state_dict(torch.load("1357model.pt"))
     
     transformations_for_model = transforms.Compose([
         transforms.ToTensor(),
@@ -169,11 +163,10 @@ if __name__=="__main__":
     ])
     
 
-    #dicom_file = test_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model)
+    dicom_file = test_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model)
     #Production function has not been tested yet
-    dicom_file = production_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model) 
+    #dicom_file = production_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model) 
 
-    #dicom_file = four_input_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model)
 
-    dicom_file.save_as("no_resize_nn_hp_generated.IMA")
+    dicom_file.save_as("piq_hf_generated.IMA")
     print("Dicom file generated.")

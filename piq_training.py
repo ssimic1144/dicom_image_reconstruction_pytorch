@@ -8,7 +8,7 @@ from piq import VIFLoss,MultiScaleSSIMLoss, HaarPSILoss, SSIMLoss
 
 from models.piq_nc_net import Net
 from dicom_dataset import DicomDataset
-from utils.common import batch_tensor_convert, tensor_convert
+from utils.common import tensor_convert
 
 import time
 import numpy as np
@@ -43,7 +43,7 @@ criterion = SSIMLoss(data_range=1.0, kernel_size=11,k1=0.01, k2 = 0.03)
 #criterion = VIFLoss(data_range=1.0)
 #criterion = HaarPSILoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.643215, patience=6, threshold_mode="abs" ,threshold=0.0001 ,verbose=True)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.643215, patience=8, threshold_mode="abs" ,threshold=0.0001 ,verbose=True)
 
 for epoch in range(num_of_epochs):
     start_time = time.time()

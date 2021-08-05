@@ -131,4 +131,4 @@ class DicomDataset1357(DicomDataset):
                 return one_index, three_index, five_index, seven_index
 
 if __name__=="__main__":
-    new_dataset = DicomDataset1357("../slike/")
+    new_dataset = DicomDataset("../slike/")
