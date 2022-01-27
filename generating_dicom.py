@@ -4,7 +4,6 @@ import torch
 from torchvision.transforms import transforms
 
 from models.piq_nc_net import Net
-from models.net_1357 import FourInputNet
 from utils.common import numpy_convert
 from baseline import baseline_tensor
 
@@ -41,6 +40,7 @@ def test_dicom_reconstruction(dicom_path, model, transformations_for_model, tran
         next_projection = next_projection[None, ...]
 
         output = model.forward(previous_projection,next_projection)
+        #output = baseline_tensor(previous_projection, next_projection)
 
         previous_projection = get_numpy_array_from_tensor(previous_projection, original_min, original_max, original_type)
         output = get_numpy_array_from_tensor(output, original_min, original_max, original_type)
@@ -147,10 +147,10 @@ def four_input_dicom_reconstruction(dicom_path, model, transformations_for_model
     return dicom_file
 
 if __name__=="__main__":
-    dicom_path = "../test_slika/jazack1.IMA"
+    dicom_path = "data/jaszczak_rare_acq_test.dcm"
 
     model = Net()
-    model.load_state_dict(torch.load("saved_models/piq_model_200e.pt"))
+    model.load_state_dict(torch.load("improved_3_loss_300_epochs_piq_model.pt"))
     
     
     transformations_for_model = transforms.Compose([
@@ -168,5 +168,5 @@ if __name__=="__main__":
     #dicom_file = production_dicom_reconstruction(dicom_path, model, transformations_for_model, transformations_from_model) 
 
 
-    dicom_file.save_as("piq_hf_generated.IMA")
+    dicom_file.save_as("NN_jaszczak_rare_acq_test_hf_generated.IMA")
     print("Dicom file generated.")

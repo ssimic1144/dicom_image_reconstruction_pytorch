@@ -11,7 +11,7 @@ from piq import SSIMLoss, VIFLoss, HaarPSILoss
 
 transformations = transforms.Compose([transforms.ToTensor()])
 
-load_dataset = DicomDataset("../test_slika/", transform=transformations)
+load_dataset = DicomDataset("data/test/", transform=transformations)
 dataset = DataLoader(dataset=load_dataset,batch_size=1,shuffle=True)
 
 transformations_for_model = transforms.Compose([
@@ -19,7 +19,7 @@ transformations_for_model = transforms.Compose([
 ])
 
 model = Net()
-model.load_state_dict(torch.load("piq_model.pt"))
+model.load_state_dict(torch.load("improved_3_loss_300_epochs_piq_model.pt"))
 model.eval()
 
 criterion_ssim = SSIMLoss()
@@ -47,12 +47,10 @@ for _ in range(1):
         model_vif_value = criterion_vif(model.forward(prev_img_for_model,next_img_for_model),expcted_img)
         all_model_vif_values.append(model_vif_value.item())
         
-        """
         baseline_haarPSI_value = criterion_haarPSI(baseline_tensor(prev_img,next_img),expcted_img)
         all_baseline_haarPSI_values.append(baseline_haarPSI_value.item())
         model_haarPSI_value = criterion_haarPSI(model.forward(prev_img_for_model,next_img_for_model),expcted_img)
         all_model_haarPSI_values.append(model_haarPSI_value.item())
-        """
 
     avg_baseline_value = np.array(all_baseline_ssim_values).mean()
     min_baseline_value = np.array(all_baseline_ssim_values).min()
@@ -74,7 +72,6 @@ for _ in range(1):
     print("BASELINE avg. value for expected and output tensor : {:.4f}\nBaseline Min : {:.4f}\nBaseline Max : {:.4f}".format(avg_baseline_value, min_baseline_value, max_baseline_value))
     print("MODEL avg. value for expected and output tensor : {:.4f}\nModel Min : {:.4f}\nModel Max : {:.4f}".format(avg_model_value, min_model_value, max_model_value))
     
-    """
     avg_baseline_value = np.array(all_baseline_haarPSI_values).mean()
     min_baseline_value = np.array(all_baseline_haarPSI_values).min()
     max_baseline_value = np.array(all_baseline_haarPSI_values).max()
@@ -84,4 +81,3 @@ for _ in range(1):
     print("---------HaarPSI---------")
     print("BASELINE avg. value for expected and output tensor : {:.4f}\nBaseline Min : {:.4f}\nBaseline Max : {:.4f}".format(avg_baseline_value, min_baseline_value, max_baseline_value))
     print("MODEL avg. value for expected and output tensor : {:.4f}\nModel Min : {:.4f}\nModel Max : {:.4f}".format(avg_model_value, min_model_value, max_model_value))
-    """
