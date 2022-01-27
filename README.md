@@ -14,7 +14,7 @@ $pip install -r requirements.txt
 
 ### Step 0
 
-Acquire DICOM files, which will be used for traning and testing the neural network(NN). Put the DICOM file for which you want to generate missing projection in separate directory and don't use it during training neural network.
+Acquire DICOM files, which will be used for traning and testing the neural network(NN). Put the DICOM file for which you want to generate missing projection in separate directory and don't use it during neural network training.
 
 ### Step 1
 
@@ -36,4 +36,4 @@ Generate missing projections by executing `generating_dicom.py`.
 
 > Don't forget to specify correct path for your NN model and test DICOM file
 
-If you want to generate missing projections with baseline model for testing purposes, you need to comment the line 43 and uncomment the line 44 inside `generating_dicom.py".
+If you want to generate missing projections with baseline model for testing purposes, you need to comment the line 43 and uncomment the line 44 inside `generating_dicom.py`.
